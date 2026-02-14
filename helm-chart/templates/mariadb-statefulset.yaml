@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.mariadb.name }}
+  labels:
+    app: {{ .Values.mariadb.name }}
+spec:
+  serviceName: {{ .Values.mariadb.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.mariadb.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mariadb.name }}
+    spec:
+      containers:
+        - name: mariadb
+          image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.mariadb.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.mariadb.storageSize }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.mariadb.name }}
+spec:
+  ports:
+    - port: {{ .Values.mariadb.port }}
+  selector:
+    app: {{ .Values.mariadb.name }}
+  clusterIP: None

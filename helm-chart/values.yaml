@@ -1,0 +1,66 @@
+frontendServiceType: LoadBalancer
+apiServiceType: LoadBalancer
+
+appUser: "omer-migdal"
+
+env:
+  user: "omer-migdal"
+  mysqlHost: "" # Auto-detected if empty
+  apiBaseUrl: "/api/todos"
+
+secret:
+  rootPassword: "" # Set via --set secret.rootPassword=<password>
+
+imagePullSecrets: []
+
+frontend:
+  name: todos-frontend
+  replicaCount: 1
+  image:
+    repository: ghcr.io/bennyro-mta/todolist-vue
+    tag: "1.2"
+    pullPolicy: IfNotPresent
+  port: 8080
+  probes:
+    liveness:
+      path: /
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readiness:
+      path: /
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  iconImage: "https://raw.githubusercontent.com/omermigdal/todolist-k8s/main/icon.png"
+
+api:
+  name: todos-api
+  replicaCount: 1
+  image:
+    repository: ghcr.io/bennyro-mta/todos-api
+    tag: "1.2"
+    pullPolicy: Always
+  port: 8080
+  probes:
+    liveness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+    readiness:
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+mariadb:
+  name: mariadb
+  database: "todolist"
+  tableName: "todos"
+  username: "root"
+  port: 3306
+  image:
+    repository: mariadb
+    tag: "10.11"
+    pullPolicy: IfNotPresent
+  storageSize: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""

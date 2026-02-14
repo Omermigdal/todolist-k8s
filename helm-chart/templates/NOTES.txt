@@ -1,0 +1,83 @@
+INSTALLATION
+========================================================================
+
+1. Start Minikube:
+   minikube start --driver=docker
+
+2. Enable ingress:
+   minikube addons enable ingress
+
+   Wait for ingress controller:
+   kubectl get pods -n ingress-nginx 
+   # ingress-nginx-controller should be Running
+
+3. (IMPORTANT) Verify ingress-nginx admission webhook health:
+
+   kubectl get validatingwebhookconfigurations | grep ingress
+   kubectl get secret -n ingress-nginx | grep admission
+
+   If Helm installation later fails with:
+     "tls: failed to verify certificate: x509: certificate signed by unknown authority"
+
+   Then fix ingress-nginx webhook certificates:
+
+   a. Delete webhook configuration and cert secret:
+      kubectl delete validatingwebhookconfiguration ingress-nginx-admission
+      kubectl delete secret ingress-nginx-admission -n ingress-nginx
+
+   b. Restart ingress-nginx controller:
+      kubectl rollout restart deployment ingress-nginx-controller -n ingress-nginx
+
+   c. Verify regeneration (ages should be similar):
+      kubectl get validatingwebhookconfiguration ingress-nginx-admission
+      kubectl get secret ingress-nginx-admission -n ingress-nginx
+
+4. Install the Helm chart:
+   helm install my-release oci://ghcr.io/omermigdal/todolist-k8s/todolist-k8s \
+     --set secret.rootPassword=password1
+
+5. Wait for application pods:
+   kubectl get pods
+   # All 3 pods should show Running 1/1
+
+Access the application (portable):
+----------------------------------------
+# Preferred: forward the ingress controller to localhost
+kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80
+
+# If local port 8080 is already in use you can either free it or use another local port:
+# - Free (Windows):
+#     netstat -aon | findstr :8080
+#     taskkill /PID <pid> /F
+#   Free (macOS / Linux):
+#     lsof -i:8080
+#     kill <pid>
+# - Or use an alternate local port (example: 9090):
+#     kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
+
+Open in browser (adjust port if needed):
+http://localhost:8080  (or http://localhost:9090)
+
+Quick smoke tests:
+  # API (should return 200 and JSON)
+  curl -fsS http://localhost:8080/api/todos/ || curl -fsS http://localhost:9090/api/todos/
+  # Frontend
+  curl -fsS http://localhost:8080/ || curl -fsS http://localhost:9090/
+
+If you see a 503 from the ingress:
+  kubectl get endpoints todos-api-svc
+  kubectl get pods -l app=todos-api
+  kubectl logs -l app=todos-api -c api
+  kubectl get pvc -o wide   # check MariaDB storage status
+
+Notes about upgrades / MariaDB storage:
+- The chart uses `mariadb.name` for the StatefulSet/service. Upgrades include compatibility for the older `todolist` service name, but always backup persistent data before making storage changes.
+- To backup DB data (quick):
+  kubectl exec -it $(kubectl get pod -l app=mariadb -o jsonpath='{.items[0].metadata.name}') -- sh -c "mkdir -p /tmp/backup && exec mysqldump -uroot -p\$MARIADB_ROOT_PASSWORD $MYSQL_DB > /tmp/backup/dump.sql" && kubectl cp <pod>:/tmp/backup/dump.sql ./dump.sql
+
+(Optional)
+To use a custom domain:
+helm upgrade my-release \
+  --set ingress.host=todolist.local
+
+

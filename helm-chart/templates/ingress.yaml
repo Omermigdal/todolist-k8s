@@ -1,0 +1,54 @@
+{{- if .Values.ingress.enabled }}
+
+# API Ingress (with rewrite)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-api
+  labels:
+    app: {{ .Release.Name }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host | quote }}
+      {{- end }}
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Values.api.name }}-svc
+                port:
+                  number: {{ .Values.api.port }}
+
+---
+
+# Frontend Ingress (no rewrite)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-frontend
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - {{- if .Values.ingress.host }}
+      host: {{ .Values.ingress.host | quote }}
+      {{- end }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.frontend.name }}
+                port:
+                  number: {{ .Values.frontend.port }}
+
+{{- end }}
