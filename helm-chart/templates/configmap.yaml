@@ -5,7 +5,7 @@ metadata:
 data:
   MYSQL_DB: {{ .Values.mariadb.database | quote }}
   MYSQL_TABLE: {{ .Values.mariadb.tableName | quote }}
-  MYSQL_HOST: {{ .Values.env.mysqlHost | default .Values.mariadb.name | quote }}
+  MYSQL_HOST: {{ .Values.mariadb.name | quote }}
   MYSQL_USER: "root"
   USER: {{ .Values.appUser | quote }}
   API_BASE_URL: {{ .Values.env.apiBaseUrl | quote }}

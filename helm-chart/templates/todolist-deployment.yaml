@@ -9,10 +9,12 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.api.name }}
+      app.kubernetes.io/component: app
   template:
     metadata:
       labels:
         app: {{ .Values.api.name }}
+        app.kubernetes.io/component: app
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -26,9 +28,7 @@ spec:
             - -c
             - |
               echo "Waiting for MariaDB to be ready..."
-              # Accept either the configured service name (.name) or the legacy database-based
-              # service (.database) to remain backward compatible during upgrades.
-              until nc -z {{ .Values.mariadb.name }} {{ .Values.mariadb.port }} || nc -z {{ .Values.mariadb.database }} {{ .Values.mariadb.port }}; do
+              until nc -z mariadb {{ .Values.mariadb.port }}; do
                 echo "MariaDB is not ready yet. Retrying in 2 seconds..."
                 sleep 2
               done
@@ -38,7 +38,7 @@ spec:
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           ports:
-            - name: http
+            - name: http          
               containerPort: {{ .Values.api.port }}
           envFrom:
             - configMapRef:

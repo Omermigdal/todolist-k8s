@@ -49,6 +49,6 @@ spec:
               service:
                 name: {{ .Values.frontend.name }}
                 port:
-                  number: {{ .Values.frontend.port }}
+                  number: 80
 
 {{- end }}
