@@ -58,7 +58,10 @@ mariadb:
     repository: mariadb
     tag: "10.11"
     pullPolicy: IfNotPresent
-  storageSize: 1Gi
+  persistence:
+    storageClass: ""
+    size: 1Gi
+    accessMode: ReadWriteOnce
 
 ingress:
   enabled: true

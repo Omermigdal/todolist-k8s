@@ -32,10 +32,14 @@ spec:
     - metadata:
         name: data
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes:
+          - {{ .Values.mariadb.persistence.accessMode }}
+        {{- if .Values.mariadb.persistence.storageClass }}
+        storageClassName: {{ .Values.mariadb.persistence.storageClass | quote }}
+        {{- end }}
         resources:
           requests:
-            storage: {{ .Values.mariadb.storageSize }}
+            storage: {{ .Values.mariadb.persistence.size }}
 ---
 apiVersion: v1
 kind: Service

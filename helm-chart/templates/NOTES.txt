@@ -1,32 +1,18 @@
-Todolist Helm chart — Quick start
+========================================================================
+  TODOLIST HELM CHART — QUICK START
+========================================================================
 
-Prerequisite
-- ingress controller running: kubectl get pods -n ingress-nginx
+1. Verify ingress controller
+   kubectl get pods -n ingress-nginx
 
-Access (recommended)
-- Port-forward ingress controller:
-  kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80
-  Open: http://localhost:8080
-  (use another local port if 8080 is busy)
+2. Install Todolist Helm chart
+   helm install my-release oci://ghcr.io/omermigdal/todolist-k8s/todolist-k8s \
+     --set secret.rootPassword=Password
 
-Quick checks
-- kubectl get pods
-- curl -fsS http://localhost:8080/api/todos/   # should return JSON
+3. Set custom host (optional)
+   helm upgrade my-release --set ingress.host=todolist.local
 
-Troubleshooting
-- Ingress not ready: kubectl get pods -n ingress-nginx
-- 503 from ingress: kubectl get endpoints todos-api-svc && kubectl get pods -l app=todos-api && kubectl logs -l app=todos-api -c api
-- Port 8080 busy: choose another local port (e.g. 9090)
-- MariaDB password changed after first install (important): the DB password is stored in the database on the PVC; changing `secret.rootPassword` alone will NOT update the existing DB and will cause "Access denied" errors. To recover you can either:
-  - reuse the original password (set `--set secret.rootPassword=<original>`),
-  - delete the MariaDB PVC to reinitialize the DB (data loss): `kubectl delete pvc data-{{ .Values.mariadb.name }}-0`, or
-  - run a manual DB reset/migration (advanced).
-  The chart now prevents accidental password changes when a DB PVC already exists.
+4. Port-forward ingress controller
+   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8080:80
 
-Helm examples
-- Install: helm install my-release oci://ghcr.io/omermigdal/todolist-k8s/todolist-k8s --set secret.rootPassword=Password
-- Set custom host: helm upgrade my-release --set ingress.host=todolist.local
-
-Done — the app should be available at the URL above.
-
-
+5. Test the app at http://localhost:8080/
